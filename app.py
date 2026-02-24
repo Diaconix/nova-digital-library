@@ -246,7 +246,7 @@ else:
             total = len(st.session_state.cart) * 1500
             st.markdown(f"""
             <div class="floating-cart">
-                <p style="margin:0; font-size:16px; font-weight:bold; color:#1e1e1e;">🛒 {len(st.session_state.cart)} books selected (₦{total:,.2f})</p>
+                <p style="margin:0; font-size:16px; font-weight:bold; color:var(--text-color);">🛒 {len(st.session_state.cart)} books selected (₦{total:,.2f})</p>
                 <a href="?checkout=true" target="_self" class="checkout-btn">Proceed to Secure Checkout</a>
             </div>
             """, unsafe_allow_html=True)
