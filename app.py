@@ -10,6 +10,7 @@ import os
 st.set_page_config(page_title="Nova Digital Library", page_icon="assets/favicon.png", layout="wide")
 
 st.markdown("""
+    st.markdown("""
     <style>
     /* Global Corporate Styling - Adaptive */
     .stApp {
@@ -18,26 +19,34 @@ st.markdown("""
     div.stButton > button {
         border-radius: 20px;
     }
-    /* Fixed IP Watermark */
     .aicon-watermark {
         position: fixed;
         bottom: 10px;
         right: 15px;
         font-size: 11px;
-        color: #888888; /* Neutral gray that works on light and dark */
+        color: #888888;
         font-family: monospace;
         z-index: 9999;
         user-select: none;
     }
-    /* MOBILE FIX 1: Force 2-Column Grid on Phones */
+    
+    /* MOBILE FIX 1: The Force-Wrap CSS Grid */
     @media (max-width: 768px) {
+        /* Force the parent container to allow side-by-side wrapping */
+        [data-testid="stHorizontalBlock"] {
+            flex-wrap: wrap !important;
+            gap: 2% !important; /* Small gap between columns */
+        }
+        /* Force the individual books to take up half the screen */
         div[data-testid="column"] {
             width: 48% !important;
             flex: 0 0 48% !important;
             min-width: 48% !important;
+            margin-bottom: 1rem !important; 
         }
     }
-    /* MOBILE FIX 2: Floating Checkout Cart (Adaptive) */
+    
+    /* MOBILE FIX 2: Glassmorphism Floating Cart (50% Transparency) */
     .floating-cart {
         position: fixed;
         bottom: 30px;
@@ -45,14 +54,28 @@ st.markdown("""
         transform: translateX(-50%);
         width: 90%;
         max-width: 400px;
-        background-color: var(--background-color); /* ADAPTS AUTOMATICALLY */
-        border: 2px solid #5B21B6; /* Brand Purple */
+        
+        /* The 50% Transparent Frosted Glass Effect */
+        background: rgba(255, 255, 255, 0.5);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        
+        border: 1px solid rgba(91, 33, 182, 0.3); /* Subtle Brand Purple */
         border-radius: 15px;
         padding: 15px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.15);
         z-index: 9998;
         text-align: center;
     }
+    
+    /* Dark Mode Auto-Switch for the Glass Cart */
+    @media (prefers-color-scheme: dark) {
+        .floating-cart {
+            background: rgba(14, 17, 23, 0.5); /* Deep dark with 50% opacity */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    }
+    
     .checkout-btn {
         display: block;
         margin-top: 10px;
