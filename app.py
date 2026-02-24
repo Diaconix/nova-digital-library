@@ -9,8 +9,8 @@ import os
 # --- 1. CONFIG & BRANDING ---
 st.set_page_config(page_title="Nova Digital Library", page_icon="assets/favicon.png", layout="wide")
 
+# CSS BLOCK (No 'f' prefix here to avoid SyntaxError)
 st.markdown("""
-    st.markdown("""
     <style>
     /* Global Corporate Styling - Adaptive */
     .stApp {
@@ -32,12 +32,10 @@ st.markdown("""
     
     /* MOBILE FIX 1: The Force-Wrap CSS Grid */
     @media (max-width: 768px) {
-        /* Force the parent container to allow side-by-side wrapping */
         [data-testid="stHorizontalBlock"] {
             flex-wrap: wrap !important;
-            gap: 2% !important; /* Small gap between columns */
+            gap: 2% !important; 
         }
-        /* Force the individual books to take up half the screen */
         div[data-testid="column"] {
             width: 48% !important;
             flex: 0 0 48% !important;
@@ -55,12 +53,11 @@ st.markdown("""
         width: 90%;
         max-width: 400px;
         
-        /* The 50% Transparent Frosted Glass Effect */
         background: rgba(255, 255, 255, 0.5);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         
-        border: 1px solid rgba(91, 33, 182, 0.3); /* Subtle Brand Purple */
+        border: 1px solid rgba(91, 33, 182, 0.3); 
         border-radius: 15px;
         padding: 15px;
         box-shadow: 0 8px 32px rgba(0,0,0,0.15);
@@ -68,10 +65,9 @@ st.markdown("""
         text-align: center;
     }
     
-    /* Dark Mode Auto-Switch for the Glass Cart */
     @media (prefers-color-scheme: dark) {
         .floating-cart {
-            background: rgba(14, 17, 23, 0.5); /* Deep dark with 50% opacity */
+            background: rgba(14, 17, 23, 0.5); 
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
     }
@@ -141,7 +137,6 @@ if checkout_ids:
             total_price = sum(get_rental_price(b) for b in books)
             selar_link = "https://selar.com/d20is52cl1" 
             
-            # Clean Mobile-Friendly Summary
             with st.container(border=True):
                 st.markdown("### 🛒 Your Selection")
                 for b in books:
@@ -264,7 +259,7 @@ else:
     with tab_gallery:
         st.markdown("### 📚 The Nova Collection")
         
-        # --- THE FLOATING MOBILE CART ---
+        # --- THE FLOATING MOBILE CART (F-String used safely here) ---
         if st.session_state.cart:
             total = len(st.session_state.cart) * 1500
             st.markdown(f"""
@@ -307,160 +302,4 @@ else:
                         with cols[idx % 4]:
                             with st.container(border=True):
                                 cover = row.get('cover_url') if row.get('cover_url') else "https://via.placeholder.com/200x300?text=No+Cover"
-                                st.image(cover, use_container_width=True)
-                                st.markdown(f"**{row['title']}**")
-                                st.caption(f"_{row['author']}_")
-                                
-                                status = row.get('status', 'Available')
-                                if status == "Available":
-                                    st.markdown(":green[● Available]")
-                                    if row['id'] in st.session_state.cart:
-                                        if st.button("Remove", key=f"rem_{row['id']}", use_container_width=True):
-                                            st.session_state.cart.remove(row['id'])
-                                            st.rerun()
-                                    else:
-                                        if st.button("Add to Selection", key=f"add_{row['id']}", use_container_width=True):
-                                            st.session_state.cart.append(row['id'])
-                                            st.rerun()
-                                            
-                                elif status == "Reserved":
-                                    st.markdown(":orange[● Reserved]")
-                                    st.button("Unavailable", key=f"btn_r_{row['id']}", disabled=True, use_container_width=True)
-                                else:
-                                    st.markdown(":red[● Rented Out]")
-                                    st.button("Unavailable", key=f"btn_u_{row['id']}", disabled=True, use_container_width=True)
-            else:
-                st.info("No books found matching your search.")
-        else:
-            st.warning("📭 The Library is currently empty.")
-
-    # --- 👤 TAB 2: MEMBER ONBOARDING ---
-    with tab_member:
-        st.header("👤 Join the Nova Elite Readers")
-        with st.form("new_member_form"):
-            c1, c2 = st.columns(2)
-            with c1:
-                f_name = st.text_input("Full Name")
-                email = st.text_input("Email Address")
-            with c2:
-                phone = st.text_input("WhatsApp Number")
-                tier = st.selectbox("Membership Tier", ["Silver (Pickup Only)", "Gold (Standard Delivery)", "Elite (Priority Access)"])
-            addr = st.text_area("Delivery Address (Required for Gold/Elite)")
-            if st.form_submit_button("Activate Membership", use_container_width=True):
-                if f_name and email:
-                    new_member = {"full_name": f_name, "email": email.strip().lower(), "phone": phone, "delivery_address": addr, "membership_tier": tier}
-                    try:
-                        supabase.table("lib_members").insert(new_member).execute()
-                        st.success(f"Welcome, {f_name}! Your {tier} membership is active.")
-                        st.balloons()
-                    except Exception as e:
-                        st.error(f"Registration Failed: {e}")
-                else:
-                    st.warning("Name and Email are required.")
-
-    # --- 🚚 TAB 3: DELIVERY HUB (ADMIN ONLY) ---
-    if tab_logistics:
-        with tab_logistics:
-            st.header("🚚 Logistics & Payment Hub")
-            
-            try:
-                res = supabase.table("lib_rentals").select(
-                    "id, book_id, due_date, delivery_type, delivery_status, is_paid, lib_inventory(title), lib_members(full_name, phone)"
-                ).execute()
-                
-                if res.data:
-                    formatted_data = []
-                    for r in res.data:
-                        book_title = r.get("lib_inventory", {}).get("title", "Unknown") if r.get("lib_inventory") else "Unknown"
-                        
-                        if r.get("lib_members"):
-                            customer = r["lib_members"].get("full_name", "Unknown")
-                            contact = r["lib_members"].get("phone", "N/A")
-                        else:
-                            customer = r.get("delivery_type", "Guest").replace("Pickup by ", "")
-                            contact = "Guest (No Phone)"
-                            
-                        formatted_data.append({
-                            "Ref ID": str(r["id"])[:8],
-                            "Book": book_title,
-                            "Customer": customer,
-                            "Contact": contact,
-                            "Method": "🚚 Delivery" if "Home Delivery" in r["delivery_type"] else "🚶 Pickup",
-                            "Payment": "✅ Paid" if r["is_paid"] else "⏳ Pending Selar",
-                            "Status": r["delivery_status"],
-                            "_raw_id": r["id"],
-                            "_book_id": r["book_id"]
-                        })
-                        
-                    df_log = pd.DataFrame(formatted_data)
-                    
-                    st.dataframe(
-                        df_log.drop(columns=["_raw_id", "_book_id"]), 
-                        use_container_width=True, 
-                        hide_index=True
-                    )
-                    
-                    st.divider()
-                    st.subheader("⚙️ Dispatch & Update Desk")
-                    
-                    c1, c2 = st.columns(2)
-                    with c1:
-                        options = df_log.apply(lambda x: f"{x['Ref ID']} - {x['Customer']} ({x['Book']})", axis=1).tolist()
-                        selected_display = st.selectbox("Select Transaction", options)
-                        selected_index = options.index(selected_display)
-                        
-                        target_uuid = df_log.iloc[selected_index]["_raw_id"]
-                        target_book_id = df_log.iloc[selected_index]["_book_id"]
-                        
-                    with c2:
-                        new_status = st.selectbox(
-                            "Update Status", 
-                            [
-                                "Payment Confirmed - Awaiting Dispatch", 
-                                "In-Transit (Rider Dispatched)", 
-                                "Picked Up (Library Desk)", 
-                                "Returned & Completed"
-                            ]
-                        )
-                        
-                    if st.button("Commit Update", type="primary", use_container_width=True):
-                        update_payload = {"delivery_status": new_status}
-                        if "Payment Confirmed" in new_status:
-                            update_payload["is_paid"] = True
-                            
-                        supabase.table("lib_rentals").update(update_payload).eq("id", target_uuid).execute()
-                        
-                        if new_status in ["In-Transit (Rider Dispatched)", "Picked Up (Library Desk)"]:
-                            supabase.table("lib_inventory").update({"status": "Rented"}).eq("id", target_book_id).execute()
-                        elif new_status == "Returned & Completed":
-                            supabase.table("lib_inventory").update({"status": "Available"}).eq("id", target_book_id).execute()
-                            
-                        st.success(f"Ledger & Inventory updated!")
-                        st.info("🔄 Refresh the page to see the updated table.")
-                        
-                else:
-                    st.info("✅ The ledger is clear.")
-                    
-            except Exception as e:
-                st.error(f"Dashboard Integration Error: {e}")
-
-    # --- ⚙️ TAB 4: ADMIN & ACQUISITIONS (ADMIN ONLY) ---
-    if tab_admin:
-        with tab_admin:
-            st.header("📚 Catalog New Acquisition")
-            with st.form("add_book_form"):
-                col1, col2 = st.columns(2)
-                with col1:
-                    title = st.text_input("Book Title")
-                    author = st.text_input("Author")
-                with col2:
-                    genre = st.selectbox("Genre", ["Fiction", "Non-Fiction", "Sci-Fi", "History", "Children's Fantasy", "Education"])
-                    condition = st.select_slider("Condition", ["Fair", "Good", "Very Good", "New"])
-                cover_url = st.text_input("Cover Image URL")
-                if st.form_submit_button("Catalog Book", use_container_width=True):
-                    if title and author:
-                        book_data = {"title": title, "author": author, "genre": genre, "condition": condition, "cover_url": cover_url, "status": "Available"}
-                        res = supabase.table("lib_inventory").insert(book_data).execute()
-                        if res.data:
-                            st.success(f"'{title}' added to inventory!")
-                            st.image(get_qr(res.data[0]['id']), width=150)
+                                st.image(cover, use_container
