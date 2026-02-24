@@ -11,6 +11,7 @@ st.set_page_config(page_title="Nova Digital Library", page_icon="assets/favicon.
 
 st.markdown("""
     <style>
+    /* Global Corporate Styling */
     .stApp {
         background-color: #f8f9fa;
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -24,6 +25,7 @@ st.markdown("""
         background-color: #2c3e50; 
         color: white;
     }
+    /* Fixed IP Watermark */
     .aicon-watermark {
         position: fixed;
         bottom: 10px;
@@ -33,6 +35,40 @@ st.markdown("""
         font-family: monospace;
         z-index: 9999;
         user-select: none;
+    }
+    /* MOBILE FIX 1: Force 2-Column Grid on Phones */
+    @media (max-width: 768px) {
+        div[data-testid="column"] {
+            width: 48% !important;
+            flex: 0 0 48% !important;
+            min-width: 48% !important;
+        }
+    }
+    /* MOBILE FIX 2: Floating Checkout Cart */
+    .floating-cart {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 400px;
+        background-color: #ffffff;
+        border: 2px solid #2c3e50;
+        border-radius: 15px;
+        padding: 15px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        z-index: 9998;
+        text-align: center;
+    }
+    .checkout-btn {
+        display: block;
+        margin-top: 10px;
+        background-color: #5B21B6;
+        color: white !important;
+        padding: 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
     }
     </style>
     <div class="aicon-watermark">Engineered by AICON Systems | calnwogu@gmail.com</div>
@@ -47,11 +83,8 @@ except KeyError:
     st.error("🚨 Secrets Error: Could not find [supabase] credentials in .streamlit/secrets.toml")
     st.stop()
 
-# Initialize Shopping Cart
 if 'cart' not in st.session_state:
     st.session_state.cart = []
-
-# Initialize Admin Authentication State
 if 'is_admin' not in st.session_state:
     st.session_state.is_admin = False
 
@@ -80,7 +113,7 @@ elif is_checkout_mode and st.session_state.cart:
 
 if checkout_ids:
     # ---------------------------------------------------------
-    # ROUTE A: EXPRESS CHECKOUT (MULTI-ITEM CAPABLE)
+    # ROUTE A: EXPRESS CHECKOUT 
     # ---------------------------------------------------------
     st.markdown("## 📱 Nova Secure Checkout")
     
@@ -92,12 +125,12 @@ if checkout_ids:
             total_price = sum(get_rental_price(b) for b in books)
             selar_link = "https://selar.com/d20is52cl1" 
             
-            st.markdown("### 🛒 Your Selection:")
-            for b in books:
-                st.markdown(f"- **{b['title']}** *(by {b['author']})* - ₦{get_rental_price(b):,.2f}")
-            
-            st.markdown(f"### **Total Amount: ₦{total_price:,.2f}**")
-            st.divider()
+            # Clean Mobile-Friendly Summary
+            with st.container(border=True):
+                st.markdown("### 🛒 Your Selection")
+                for b in books:
+                    st.markdown(f"- **{b['title']}** - ₦{get_rental_price(b):,.2f}")
+                st.markdown(f"#### **Total Amount: ₦{total_price:,.2f}**")
             
             unavailable_books = [b['title'] for b in books if b['status'] != "Available"]
             if unavailable_books:
@@ -114,12 +147,11 @@ if checkout_ids:
                     st.info("Your Elite Membership covers delivery fees! Verify your email to dispatch.")
                     member_email = st.text_input("Registered Elite Email").strip().lower()
                     
-                    if st.button("Verify & Generate Payment Link", type="primary"):
+                    if st.button("Verify & Generate Payment Link", type="primary", use_container_width=True):
                         if member_email:
                             member_check = supabase.table("lib_members").select("*").eq("email", member_email).execute()
                             if member_check.data:
                                 member = member_check.data[0]
-                                
                                 for b in books:
                                     pending_rental = {
                                         "book_id": b['id'],
@@ -144,7 +176,7 @@ if checkout_ids:
                     st.info("Standard rentals must be picked up physically from the library desk.")
                     guest_name = st.text_input("Enter your Name (for pickup reservation)")
                     
-                    if st.button("Reserve & Generate Payment Link", type="primary"):
+                    if st.button("Reserve & Generate Payment Link", type="primary", use_container_width=True):
                         if guest_name:
                             for b in books:
                                 pending_rental = {
@@ -165,7 +197,7 @@ if checkout_ids:
                             st.warning("Please provide a name for the pickup reservation.")
             
             st.divider()
-            if st.button("← Back to Main Library"):
+            if st.button("← Back to Main Library", use_container_width=True):
                 st.query_params.clear()
                 st.rerun()
         else:
@@ -175,7 +207,7 @@ if checkout_ids:
 
 else:
     # ---------------------------------------------------------
-    # ROUTE B: THE DASHBOARD TABS (WITH RBAC SECURITY)
+    # ROUTE B: THE DASHBOARD TABS 
     # ---------------------------------------------------------
     
     logo_path = "assets/logo.png"
@@ -186,14 +218,12 @@ else:
         
     st.sidebar.markdown("### 🏛️ Elite Literacy Portal")
     
-    # --- ADMIN LOGIN KEYHOLE ---
     with st.sidebar:
         st.divider()
         if not st.session_state.is_admin:
             with st.expander("🔐 Staff Access"):
                 pwd = st.text_input("Admin PIN", type="password")
                 if st.button("Unlock Dashboard", use_container_width=True):
-                    # Check against the secret password we added
                     if pwd == st.secrets.get("admin", {}).get("password", "NovaAdmin2026"):
                         st.session_state.is_admin = True
                         st.rerun()
@@ -205,14 +235,11 @@ else:
                 st.session_state.is_admin = False
                 st.rerun()
 
-    # --- DYNAMIC TAB GENERATION ---
     if st.session_state.is_admin:
-        # Admin sees everything
         tab_gallery, tab_member, tab_logistics, tab_admin = st.tabs([
             "🖼️ The Collection", "👤 Join Elite", "🚚 Delivery Hub", "⚙️ Admin & Acquisitions"
         ])
     else:
-        # Public only sees the Gallery and Membership Signup
         tab_gallery, tab_member = st.tabs(["🖼️ The Collection", "👤 Join Elite"])
         tab_logistics = None
         tab_admin = None
@@ -221,12 +248,16 @@ else:
     with tab_gallery:
         st.markdown("### 📚 The Nova Collection")
         
+        # --- THE FLOATING MOBILE CART ---
         if st.session_state.cart:
-            st.success(f"🛒 **{len(st.session_state.cart)} books selected.** Total: ₦{len(st.session_state.cart)*1500:,.2f}")
-            if st.button("Proceed to Checkout", type="primary", use_container_width=True):
-                st.query_params["checkout"] = "true"
-                st.rerun()
-            st.divider()
+            total = len(st.session_state.cart) * 1500
+            st.markdown(f"""
+            <div class="floating-cart">
+                <p style="margin:0; font-size:16px; font-weight:bold; color:#1e1e1e;">🛒 {len(st.session_state.cart)} books selected (₦{total:,.2f})</p>
+                <a href="?checkout=true" target="_self" class="checkout-btn">Proceed to Secure Checkout</a>
+            </div>
+            """, unsafe_allow_html=True)
+        # -----------------------------
 
         response = supabase.table("lib_inventory").select("*").execute()
         
@@ -267,9 +298,8 @@ else:
                                 status = row.get('status', 'Available')
                                 if status == "Available":
                                     st.markdown(":green[● Available]")
-                                    
                                     if row['id'] in st.session_state.cart:
-                                        if st.button("Remove from Selection", key=f"rem_{row['id']}", use_container_width=True):
+                                        if st.button("Remove", key=f"rem_{row['id']}", use_container_width=True):
                                             st.session_state.cart.remove(row['id'])
                                             st.rerun()
                                     else:
@@ -278,7 +308,7 @@ else:
                                             st.rerun()
                                             
                                 elif status == "Reserved":
-                                    st.markdown(":orange[● Reserved (Pending Payment)]")
+                                    st.markdown(":orange[● Reserved]")
                                     st.button("Unavailable", key=f"btn_r_{row['id']}", disabled=True, use_container_width=True)
                                 else:
                                     st.markdown(":red[● Rented Out]")
@@ -300,7 +330,7 @@ else:
                 phone = st.text_input("WhatsApp Number")
                 tier = st.selectbox("Membership Tier", ["Silver (Pickup Only)", "Gold (Standard Delivery)", "Elite (Priority Access)"])
             addr = st.text_area("Delivery Address (Required for Gold/Elite)")
-            if st.form_submit_button("Activate Membership"):
+            if st.form_submit_button("Activate Membership", use_container_width=True):
                 if f_name and email:
                     new_member = {"full_name": f_name, "email": email.strip().lower(), "phone": phone, "delivery_address": addr, "membership_tier": tier}
                     try:
@@ -312,11 +342,10 @@ else:
                 else:
                     st.warning("Name and Email are required.")
 
-    # --- 🚚 TAB 3: DELIVERY HUB & PAYMENTS (ADMIN ONLY) ---
+    # --- 🚚 TAB 3: DELIVERY HUB (ADMIN ONLY) ---
     if tab_logistics:
         with tab_logistics:
             st.header("🚚 Logistics & Payment Hub")
-            st.write("Reconcile Selar transactions and manage dispatch riders.")
             
             try:
                 res = supabase.table("lib_rentals").select(
@@ -361,7 +390,7 @@ else:
                     c1, c2 = st.columns(2)
                     with c1:
                         options = df_log.apply(lambda x: f"{x['Ref ID']} - {x['Customer']} ({x['Book']})", axis=1).tolist()
-                        selected_display = st.selectbox("Select Transaction to Update", options)
+                        selected_display = st.selectbox("Select Transaction", options)
                         selected_index = options.index(selected_display)
                         
                         target_uuid = df_log.iloc[selected_index]["_raw_id"]
@@ -369,7 +398,7 @@ else:
                         
                     with c2:
                         new_status = st.selectbox(
-                            "Action / Update Status", 
+                            "Update Status", 
                             [
                                 "Payment Confirmed - Awaiting Dispatch", 
                                 "In-Transit (Rider Dispatched)", 
@@ -378,7 +407,7 @@ else:
                             ]
                         )
                         
-                    if st.button("Commit Update to Ledger", type="primary"):
+                    if st.button("Commit Update", type="primary", use_container_width=True):
                         update_payload = {"delivery_status": new_status}
                         if "Payment Confirmed" in new_status:
                             update_payload["is_paid"] = True
@@ -390,11 +419,11 @@ else:
                         elif new_status == "Returned & Completed":
                             supabase.table("lib_inventory").update({"status": "Available"}).eq("id", target_book_id).execute()
                             
-                        st.success(f"Ledger & Inventory updated for {selected_display}!")
+                        st.success(f"Ledger & Inventory updated!")
                         st.info("🔄 Refresh the page to see the updated table.")
                         
                 else:
-                    st.info("✅ The ledger is currently clear. No pending rentals or pickups.")
+                    st.info("✅ The ledger is clear.")
                     
             except Exception as e:
                 st.error(f"Dashboard Integration Error: {e}")
@@ -412,7 +441,7 @@ else:
                     genre = st.selectbox("Genre", ["Fiction", "Non-Fiction", "Sci-Fi", "History", "Children's Fantasy", "Education"])
                     condition = st.select_slider("Condition", ["Fair", "Good", "Very Good", "New"])
                 cover_url = st.text_input("Cover Image URL")
-                if st.form_submit_button("Catalog Book"):
+                if st.form_submit_button("Catalog Book", use_container_width=True):
                     if title and author:
                         book_data = {"title": title, "author": author, "genre": genre, "condition": condition, "cover_url": cover_url, "status": "Available"}
                         res = supabase.table("lib_inventory").insert(book_data).execute()
