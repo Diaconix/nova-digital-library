@@ -11,19 +11,12 @@ st.set_page_config(page_title="Nova Digital Library", page_icon="assets/favicon.
 
 st.markdown("""
     <style>
-    /* Global Corporate Styling */
+    /* Global Corporate Styling - Adaptive */
     .stApp {
-        background-color: #f8f9fa;
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    }
-    [data-testid="stHeader"] {
-        background-color: #ffffff;
-        border-bottom: 1px solid #dee2e6;
     }
     div.stButton > button {
         border-radius: 20px;
-        background-color: #2c3e50; 
-        color: white;
     }
     /* Fixed IP Watermark */
     .aicon-watermark {
@@ -31,7 +24,7 @@ st.markdown("""
         bottom: 10px;
         right: 15px;
         font-size: 11px;
-        color: #cbd5e1;
+        color: #888888; /* Neutral gray that works on light and dark */
         font-family: monospace;
         z-index: 9999;
         user-select: none;
@@ -44,7 +37,7 @@ st.markdown("""
             min-width: 48% !important;
         }
     }
-    /* MOBILE FIX 2: Floating Checkout Cart */
+    /* MOBILE FIX 2: Floating Checkout Cart (Adaptive) */
     .floating-cart {
         position: fixed;
         bottom: 30px;
@@ -52,11 +45,11 @@ st.markdown("""
         transform: translateX(-50%);
         width: 90%;
         max-width: 400px;
-        background-color: #ffffff;
-        border: 2px solid #2c3e50;
+        background-color: var(--background-color); /* ADAPTS AUTOMATICALLY */
+        border: 2px solid #5B21B6; /* Brand Purple */
         border-radius: 15px;
         padding: 15px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
         z-index: 9998;
         text-align: center;
     }
